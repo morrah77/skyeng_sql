@@ -1,0 +1,105 @@
+Дамп БД в файле skyeng.sql
+
+База из 3-х таблиц, в teacher 30 записей, в student 100 записей, в connection 3000 записей (по принципу "каждый с каждым")
+
+выбор 20 учителей с количеством студентов для каждого:
+
+SELECT  `a`.`id` ,  `a`.`name` , COUNT(  `b`.`student_id` ) AS  `students_count` 
+FROM  `teacher` AS  `a` 
+LEFT JOIN  `connection` AS  `b` ON  `a`.`id` =  `b`.`teacher_id` 
+GROUP BY  `a`.`id` 
+ORDER BY  `a`.`id` ASC 
+LIMIT 0 , 20
+
+Запрос занял 0.1164 сек.
+
+Для ускорения запроса создадим индекс по искомому полю присоединяемой таблицы
+
+CREATE INDEX ind1 ON  `connection` (
+`teacher_id`
+)
+
+Запрос занял 0.2198 сек.
+
+В результате получим ускорение примерно в 15 раз
+
+SELECT  `a`.`id` ,  `a`.`name` , COUNT(  `b`.`student_id` ) AS  `students_count` 
+FROM  `teacher` AS  `a` 
+LEFT JOIN  `connection` AS  `b` ON  `a`.`id` =  `b`.`teacher_id` 
+GROUP BY  `a`.`id` 
+ORDER BY  `a`.`id` ASC 
+LIMIT 0 , 20
+
+Запрос занял 0.0137 сек.
+
+выбор 10 студентов и их учителей:
+формулировка неточная, допустим, что речь идет о количестве учителей
+
+Вначале удалим прежний индекс
+
+DROP INDEX ind1 ON  `connection`
+
+Запрос занял 0.1367 сек. 
+
+SELECT  `a`.`id` ,  `a`.`name` , COUNT(  `b`.`teacher_id` ) AS  `teachers_count` 
+FROM  `student` AS  `a` 
+LEFT JOIN  `connection` AS  `b` ON  `a`.`id` =  `b`.`student_id` 
+GROUP BY  `a`.`id` 
+ORDER BY  `a`.`id` ASC 
+LIMIT 0 , 10
+
+Запрос занял 0.3830 сек.
+
+Для ускорения запроса создадим индекс по искомому полю присоединяемой таблицы
+
+CREATE INDEX ind1 ON  `connection` (
+`student_id`
+)
+
+Запрос занял 0.1712 сек.
+
+В результате получим ускорение примерно в 60 раз
+
+SELECT  `a`.`id` ,  `a`.`name` , COUNT(  `b`.`teacher_id` ) AS  `teachers_count` 
+FROM  `student` AS  `a` 
+LEFT JOIN  `connection` AS  `b` ON  `a`.`id` =  `b`.`student_id` 
+GROUP BY  `a`.`id` 
+ORDER BY  `a`.`id` ASC 
+LIMIT 0 , 10
+
+Запрос занял 0.0027 сек.
+
+
+Теперь предположим, что речь идет о первом учителе - подобное логично для концепции "один учитель - много студентов, один студент - один учитель"
+
+Вновь удалим прежний индекс
+
+DROP INDEX ind1 ON  `connection`
+
+SELECT  `a`.`id` ,  `a`.`name` , MIN(  `b`.`teacher_id` ) AS  `first_teacher` 
+FROM  `student` AS  `a` 
+LEFT JOIN  `connection` AS  `b` ON  `a`.`id` =  `b`.`student_id` 
+GROUP BY  `a`.`id` 
+ORDER BY  `a`.`id` ASC 
+LIMIT 0 , 10
+
+Запрос занял 0.3908 сек.
+
+Для ускорения запроса создадим индекс по искомому полю присоединяемой таблицы
+
+CREATE INDEX ind1 ON  `connection` (
+`student_id`
+)
+
+Запрос занял 0.2109 сек. 
+
+В результате получим ускорение примерно в 140 раз
+
+SELECT  `a`.`id` ,  `a`.`name` , MIN(  `b`.`teacher_id` ) AS  `first_teacher` 
+FROM  `student` AS  `a` 
+LEFT JOIN  `connection` AS  `b` ON  `a`.`id` =  `b`.`student_id` 
+GROUP BY  `a`.`id` 
+ORDER BY  `a`.`id` ASC 
+LIMIT 0 , 10
+
+Запрос занял 0.0027 сек.
